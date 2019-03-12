@@ -110,7 +110,7 @@ static void rcswitch_rxTask(void* pvParameter);
 static inline int checkElement(rmt_item32_t symbol);
 static int decode(rmt_item32_t *items, size_t size, uint32_t* ticksPerBit);
 
-static rcswitch_err_t _send(uint32_t bits, uint8_t repeat);
+static rcswitch_err_t _send(uint32_t bits, uint8_t repeat, int code_length);
 
 /*
  * Initialization
@@ -218,13 +218,13 @@ static inline rcswitch_err_t sendHX2262(const char* code, uint8_t repeat) {
 		}
 	}
 
-	return _send(bits, repeat);
+	return _send(bits, repeat, 24);
 }
 
 static inline rcswitch_err_t send1527(const char* code, uint8_t repeat) {
 	uint32_t bits = 0;
 
-	for (int i = 0; i < 24; i++) {
+	for (int i = 0; i < strlen(code); i++) {
 		switch (code[i]) {
 		case '0':
 			break;
@@ -239,7 +239,7 @@ static inline rcswitch_err_t send1527(const char* code, uint8_t repeat) {
 		}
 	}
 
-	return _send(bits, repeat);
+	return _send(bits, repeat, strlen(code));
 }
 
 /*
@@ -490,22 +490,22 @@ void rcswitch_elroab440_bruteforce(bool on, uint8_t telegramRepeat) {
 	}
 }
 
-static rcswitch_err_t _send(uint32_t bits, uint8_t repeat) {
+static rcswitch_err_t _send(uint32_t bits, uint8_t repeat, int code_length) {
 	int itemIterator = 0;
-	rmt_item32_t* items = malloc(sizeof(rmt_item32_t) * 25 * repeat);
+	rmt_item32_t* items = malloc(sizeof(rmt_item32_t) * (code_length+1) * repeat);
 	if (items == NULL)
 		return RCSWITCH_ERR_NO_MEM;
 
 	for (uint8_t rep = 0; rep < repeat; rep++) {
 		items[itemIterator++] = pRcswitch->SYNC;
-		for (int i = 0; i < 24; i++) {
+		for (int i = 0; i < code_length; i++) {
 			if (bits & (1 << i))
 				items[itemIterator++] = pRcswitch->HIGH;
 			else
 				items[itemIterator++] = pRcswitch->LOW;
 		}
 	}
-	rmt_write_items(pRcswitch->txChannel, items, 25 * repeat, true);
+	rmt_write_items(pRcswitch->txChannel, items, (code_length+1) * repeat, true);
 	free(items);
 	return RCSWITCH_OK;
 }
