@@ -497,13 +497,13 @@ static rcswitch_err_t _send(uint32_t bits, uint8_t repeat, int code_length) {
 		return RCSWITCH_ERR_NO_MEM;
 
 	for (uint8_t rep = 0; rep < repeat; rep++) {
-		items[itemIterator++] = pRcswitch->SYNC;
 		for (int i = 0; i < code_length; i++) {
 			if (bits & (1 << i))
 				items[itemIterator++] = pRcswitch->HIGH;
 			else
 				items[itemIterator++] = pRcswitch->LOW;
 		}
+        items[itemIterator++] = pRcswitch->SYNC;
 	}
 	rmt_write_items(pRcswitch->txChannel, items, (code_length+1) * repeat, true);
 	free(items);
